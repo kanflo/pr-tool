@@ -2,10 +2,10 @@
 
 """
 A simple tool for listing and fetching github pull requests
-Usaeg: cd <cloned git>
-pr.py -l
+See README.md
 
 """
+
 import requests
 import sys
 from subprocess import PIPE, Popen
@@ -34,7 +34,7 @@ def github_url():
     return url[start+11 : end]
 
 """
-List pull requests
+List pull requests, returns GitHub JSON
 """
 def list_pull_requests(url):
     r = requests.get('https://api.github.com/repos/%s/pulls' % url)
@@ -44,7 +44,9 @@ def list_pull_requests(url):
     else:
         return r.json()
 
-
+"""
+Checkout the specified PR (GitHub JSON)
+"""
 def checkout_pr(pr):
     n = pr['number']
     p = Popen(["git", "fetch", "origin", "pull/%s/head:pr_%s" % (n, n)], stdout = PIPE, stderr = PIPE)
@@ -52,13 +54,11 @@ def checkout_pr(pr):
     if not "new ref" in stderrdata:
         print(stderrdata.strip())
         return False
- 
     p = Popen(["git", "checkout", "pr_%s" % (n)], stdout = PIPE, stderr = PIPE)
     (stdoutdata, stderrdata) = p.communicate()
     if not "Switched to branch" in stderrdata:
         print(stderrdata.strip())
         return False
-
     return True
 
 
