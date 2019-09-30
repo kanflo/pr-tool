@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-A simple tool for listing and fetching github pull requests
+A simple tool for listing and fetching GitHub pull requests
 See README.md
 
 """
@@ -9,9 +9,11 @@ See README.md
 import requests
 import sys
 from subprocess import PIPE, Popen
+import os
+import platform
 
 """
-Extract github short url from git in current directory
+Extract GitHub short url from git in current directory
 If git remote -v says
 origin   git@github.com:kanflo/pr-tool.git (fetch)
 return kanflo/pr-tool
@@ -61,11 +63,33 @@ def checkout_pr(pr):
         return False
     return True
 
+"""
+Open url in browser
+"""
+def open_url(url):
+    if "Darwin" in platform.platform():
+        os.system("open %s" % (url))
+    elif "Linux" in platform.platform():
+        os.system("xdg-open \"\" %s" % (url))
+    elif "Windows" in platform.platform():
+        os.system("start \"\" %s" % (url))
+    else:
+        print("What is this? OS/2 ;)")
+
+"""
+Print usage
+"""
+def usage():
+    print("Usage: %s [-l] [-c <id>] [-v <id>]" % sys.argv[0])
+    print(" -l       List pull requests in current GitHub repo")
+    print(" -c <id>  Checkout PR on a separate branch")
+    print(" -v <id>  Open PR in browser")
+    sys.exit(0)
+
 
 # main!
 if len(sys.argv) == 1:
-    print("Usage: %s [-l] [-c <id>]" % sys.argv[0])
-    sys.exit(0)
+    usage()
 
 url = github_url()
 if url:
@@ -75,10 +99,13 @@ if url:
             print("No pull requests")
         else:
             for pr in prs:
-                print(" %10s  %3s   %s" % (pr['user']['login'], pr['number'], pr['title']))
+                print(" %15s  %3s   %s" % (pr['user']['login'], pr['number'], pr['title']))
 #            print("%s" % (pr['body'].strip()))
-    if sys.argv[1] == "--check-out" or sys.argv[1] == "-c":
-        pr_id = int(sys.argv[2])
+    elif sys.argv[1] == "--check-out" or sys.argv[1] == "-c":
+        try:
+            pr_id = int(sys.argv[2])
+        except IndexError:
+            usage()
         prs = list_pull_requests(url)
         if len(prs) == 0:
             print("No pull requests")
@@ -88,5 +115,21 @@ if url:
                 if int(pr['number']) == pr_id:
                     found = True
                     checkout_pr(pr)
+            if not found:
+                print("PR %d not found." % pr_id)
+    elif sys.argv[1] == "--view" or sys.argv[1] == "-v":
+        try:
+            pr_id = int(sys.argv[2])
+        except IndexError:
+            usage()
+        prs = list_pull_requests(url)
+        if len(prs) == 0:
+            print("No pull requests")
+        else:
+            found = False
+            for pr in prs:
+                if int(pr['number']) == pr_id:
+                    found = True
+                    open_url(pr["_links"]["html"]["href"].decode('utf-8'))
             if not found:
                 print("PR %d not found." % pr_id)
