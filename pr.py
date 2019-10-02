@@ -53,7 +53,7 @@ def checkout_pr(pr):
     n = pr['number']
     p = Popen(["git", "fetch", "origin", "pull/%s/head:pr_%s" % (n, n)], stdout = PIPE, stderr = PIPE)
     (stdoutdata, stderrdata) = p.communicate()
-    if not "new ref" in stderrdata:
+    if not "new ref" in stderrdata and stderrdata != '':
         print(stderrdata.strip())
         return False
     p = Popen(["git", "checkout", "pr_%s" % (n)], stdout = PIPE, stderr = PIPE)
